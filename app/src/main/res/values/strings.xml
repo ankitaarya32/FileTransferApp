@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FileTransferApp</string>
+    <string name="manage_files">Manage Files</string>
+    <string name="upload_file">Upload File</string>
+    <string name="delete_file">Delete File</string>
+
+</resources>

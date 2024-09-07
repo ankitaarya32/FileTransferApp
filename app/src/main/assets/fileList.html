@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>File List</title>
+    <style>
+        /* Basic styling for popup */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 20px;
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .popup-content video,
+        .popup-content img,
+        .popup-content iframe {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Directory listing for /</h1>
+<ul id="fileList"></ul>
+
+<!-- Popup for preview -->
+<div id="previewPopup" class="popup">
+    <div class="popup-content">
+        <span class="close-btn" onclick="closePopup()">&#10006;</span>
+        <div id="previewContent"></div>
+    </div>
+</div>
+
+<script>
+    function previewFile(fileUrl) {
+        const extension = fileUrl.split('.').pop().toLowerCase();
+        let content = '';
+
+        if (extension === 'mp4' || extension === 'webm') {
+            content = `<video controls ><source src="${fileUrl}" type="video/${extension}"></video>`;
+        } else if (extension === 'jpg' || extension === 'jpeg' || extension === 'png' || extension === 'gif') {
+            content = `<img src="${fileUrl}" alt="Image preview">`;
+        } else {
+            alert('Preview not available for this file type.');
+            return;
+        }
+
+        document.getElementById('previewContent').innerHTML = content;
+        document.getElementById('previewPopup').style.display = 'flex';
+    }
+
+    function closePopup() {
+        document.getElementById('previewContent').innerHTML = '';
+        document.getElementById('previewPopup').style.display = 'none';
+    }
+
+    // Close the popup when pressing the ESC key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            closePopup();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        #chatBox {
+            display: none;
+            border: 1px solid #000;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        #chatMessages {
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        nav {
+            border: 2px solid black;
+            background-color: grey;
+        }
+        .chat-message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .chat-message input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        #main-left{
+            float: left;
+        }
+        #main-right{
+            float: right;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>My FTP Server</h1>
+</nav>
+
+<div id="main-left">
+<h2>Upload File</h2>
+<form action="/upload-file" method="post" enctype="multipart/form-data">
+    File: <input type="file" id="fileInput" name="file" onchange="updateFilename()"><br>
+    Filename: <input type="text" id="filenameInput" name="filename" readonly required><br>
+    <input type="submit" value="Upload" id="btnUpload" disabled="true">
+</form>
+
+<button onclick="startChat()">Start Chat</button>
+<div id="chatBox">
+    <div id="chatMessages"></div>
+    <input type="text" id="chatInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+    <button onclick="deleteSelectedMessages()">Delete Selected</button>
+    <button onclick="loadChat()" id="sync_chat">Sync Chat</button>
+    <button onclick="applyAutoSync()" >Apply AutoSync</button>
+    <button onclick="removeAutoSync()" id="auto_sync_chat" disabled>Disable AutoSync</button>
+</div>
+</div>
+<div id="main-right"></div>
+<script>
+    let username = '';
+    let tempChat = [];
+    let autoSyncInterval;
+
+    function updateFilename() {
+        const fileInput = document.getElementById('fileInput');
+        const filenameInput = document.getElementById('filenameInput');
+        const btnUpload = document.getElementById('btnUpload');
+        var file = fileInput.files[0];
+        if (file) {
+            filenameInput.value = file.name;
+            btnUpload.removeAttribute("disabled");
+        }
+    }
+
+    function startChat() {
+        username = prompt("Please enter your name:");
+        if (username) {
+            document.getElementById('chatBox').style.display = 'block';
+            loadChat(); // Load existing chat
+        }
+    }
+
+    function sendMessage() {
+        const message = document.getElementById('chatInput').value.trim();
+        if (message) {
+            const chatMessage = `${username}: ${message}`;
+            appendMessage(chatMessage);
+            saveChat(chatMessage); // Save message to server
+            document.getElementById('chatInput').value = ''; // Clear input field
+        }
+    }
+
+    function appendMessage(message) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'chat-message';
+        messageElement.innerHTML = `<input type="checkbox" value="${message}"><span>${message}</span>`;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function loadChat() {
+        fetch('/chat.txt').then(response => {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Chat file not found');
+        }).then(data => {
+            const chatMessages = data.split('\n');
+            const chatContainer = document.getElementById('chatMessages');
+            chatContainer.innerHTML = '';  // Clear existing messages
+            chatMessages.forEach(message => {
+                if (message) {
+                    appendMessage(message);
+                }
+            });
+        }).catch(error => {
+            console.error(error);
+        });
+    }
+
+    function saveChat(message) {
+        fetch('/saveChat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'message=' + encodeURIComponent(message)
+        });
+    }
+
+    function deleteSelectedMessages() {
+        const selectedMessages = Array.from(document.querySelectorAll('.chat-message input[type="checkbox"]:checked'))
+                                     .map(checkbox => checkbox.value);
+        if (selectedMessages.length > 0) {
+            fetch('/deleteChat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: selectedMessages.map(message => `selectedMessages=${encodeURIComponent(message)}`).join('&')
+            })
+            .then(response => response.ok ? loadChat() : console.error('Failed to delete messages'))
+            .catch(error => console.error(error));
+        }
+    }
+
+    function applyAutoSync(){
+    const btnSyncChat = document.getElementById('sync_chat');
+    const btnDisableSyncChat = document.getElementById('auto_sync_chat');
+
+    if (!autoSyncInterval) {
+
+        btnSyncChat.setAttribute("disabled","true");
+        btnDisableSyncChat.removeAttribute("disabled");
+        autoSyncInterval = setInterval(loadChat, 5000); // Sync every 5 seconds
+        alert('Auto-sync enabled');
+
+    }
+    }
+
+    function removeAutoSync() {
+    const btnSyncChat = document.getElementById('sync_chat');
+    const btnDisableSyncChat = document.getElementById('auto_sync_chat');
+    auto_sync_chat
+    if (autoSyncInterval) {
+        btnDisableSyncChat.setAttribute("disabled","true");
+        btnSyncChat.removeAttribute("disabled");
+        clearInterval(autoSyncInterval);
+        autoSyncInterval = null;
+        alert('Auto-sync disabled');
+    }
+}
+
+</script>
+</body>
+</html>
